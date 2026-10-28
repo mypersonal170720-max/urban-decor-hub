@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>
+/* ===== EDIT YOUR LINKS HERE =====
+   Open tiles   : put the plain link in  url
+   Locked tiles : the link is stored encrypted in  enc  (made with link-locker.html).
+                  The hub PIN unlocks it, so the real link is not readable in the page source. */
+const APPS = [
+  { name: "Quotation for Projects", icon: "📝", url: "https://script.google.com/macros/s/AKfycbydZwjc9W-iucHlvc2dYSswdsxYrFweHpayBGFPVPCCsWs4tQ_x2b9yuOKFvBIX7S9L1g/exec" },
+  { name: "Direct Sales Quotation", icon: "🛒", url: "https://script.google.com/macros/s/AKfycbw4w5mVAHas4uwZW3Hz0ogWk1LVtaMfLWTu3oXlFSjVZ71drleEY0n2_wJHGGHOYFoRwg/exec" },
+  { name: "Estimation",             icon: "📐", url: "https://script.google.com/macros/s/AKfycbzh4q8j4c02vfs_1WKjkiIWLkYmG47zWewlK1_1-cAfgd965zWDT2dtZerBYU6-XTmVpQ/exec" },
+  { name: "Site Task",              icon: "🏗️", url: "https://script.google.com/macros/s/AKfycbzctDJXU1Y1xtKGUA6JbfainNc-k87eHG_EHH2rostqN-w-pBGRuXIBRDOqjCA8eITg/exec" },
+  { name: "Direct Sales Dashboard", icon: "📈", enc: "z3LYsHsJHvxSvr0gh3FA+bCqi3yAIQuvO+nJaYmiCyOLSijmRSsz7thtOXlNO/8QnQU0JP8TaaN/NDatH0b5MXj7fmIGemheD4yC78fK8RMaU4tCmTbffnB6m07dVDZxZs+1tLofHMGreQt707/DxyBS4KLh8X0+BjtM6WbjgtvFRW5LzEM5RI/TN/xy+6DhjER4RtziOW2Y+oE237k=" },
+  { name: "Projects Dashboard",     icon: "📊", enc: "O2La8Yv47OtB7MlTiUzZHSEysIetyjJULIXC7mf3cGBepyQ9SIFWxyCTvAfK5+VVw3O5yGUUuPyJJ+IgQe90eLjwvjYSkaFVag5hVztgowN+u5cGPCX/xnjmlWG+axrRek27QK5PgRQxctPSEcgVVbCmZsWkUUPDAWbMIN9u/Pm7mIGXG92JYay8ruRHTTe/tVdEzA+CKVUIJl+jZWc=" }
+];
+/* ================================== */
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Urban Decor Hub</title>
+<meta name="theme-color" content="#1F3A5F"> <!-- THEME -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="UD Hub">
+<style>
+  :root { --brand:#1F3A5F; --bg:#f4f6f9; --card:#ffffff; --text:#1b2430; } /* THEME */
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#10151c; --card:#1b232e; --text:#eef2f7; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  header {
+    background: var(--brand); color: #fff;
+    padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 22px;
+    border-radius: 0 0 24px 24px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  header img { width: 48px; height: 48px; border-radius: 12px; background: #fff; object-fit: contain; }
+  header h1 { margin: 0; font-size: 20px; line-height: 1.2; }
+  header p { margin: 2px 0 0; font-size: 13px; opacity: .8; }
+  main { padding: 20px; max-width: 640px; margin: 0 auto; }
+  #grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .tile {
+    appearance: none; border: 0; position: relative;
+    background: var(--card); color: var(--text);
+    border-radius: 20px; min-height: 140px; padding: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    font: inherit; font-size: 15px; font-weight: 600; text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08); cursor: pointer;
+    -webkit-tap-highlight-color: transparent; transition: transform .1s;
+  }
+  .tile:active { transform: scale(.96); }
+  .icon { font-size: 44px; line-height: 1; }
+  .badge { position: absolute; top: 10px; right: 12px; font-size: 13px; opacity: .7; }
+  footer { text-align: center; font-size: 12px; opacity: .55; padding: 8px 20px 24px; }
+
+  /* PIN dialog */
+  #pinWrap {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10;
+  }
+  #pinWrap.show { display: flex; }
+  #pinBox {
+    background: var(--card); color: var(--text); width: 100%; max-width: 340px;
+    border-radius: 20px; padding: 22px 20px; box-shadow: 0 10px 40px rgba(0,0,0,.35);
+  }
+  #pinBox h2 { margin: 0 0 4px; font-size: 18px; }
+  #pinBox p { margin: 0 0 14px; font-size: 13px; opacity: .7; }
+  #pinIn {
+    width: 100%; font-size: 26px; letter-spacing: 8px; text-align: center;
+    padding: 12px; border-radius: 12px; border: 2px solid #c5ccd6;
+    background: var(--bg); color: var(--text);
+  }
+  #pinIn:focus { outline: none; border-color: var(--brand); }
+  #pinErr { color: #c62828; font-size: 13px; min-height: 18px; margin: 8px 0 0; text-align: center; }
+  .btns { display: flex; gap: 10px; margin-top: 10px; }
+  .btns button {
+    flex: 1; padding: 12px; border: 0; border-radius: 12px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  #pinCancel { background: var(--bg); color: var(--text); }
+  #pinOk { background: var(--brand); color: #fff; }
+  #pinOk:disabled { opacity: .6; }
+</style>
+</head>
+<body>
+<header>
+  <img src="icon-192.png" alt="Urban Decor logo" onerror="this.style.display='none'">
+  <div>
+    <h1>Urban Decor Hub</h1>
+    <p>Interior Design &amp; Renovation</p>
+  </div>
+</header>
+
+<main>
+  <div id="grid"></div>
+</main>
+<footer>🔒 Staff apps need the staff PIN</footer>
+
+<div id="pinWrap">
+  <div id="pinBox" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+    <h2 id="pinTitle">Staff PIN</h2>
+    <p id="pinSub">Enter the PIN to open this app.</p>
+    <input id="pinIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="off">
+    <div id="pinErr"></div>
+    <div class="btns">
+      <button type="button" id="pinCancel">Cancel</button>
+      <button type="button" id="pinOk">Open</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const grid = document.getElementById('grid');
+  const wrap = document.getElementById('pinWrap');
+  const pinIn = document.getElementById('pinIn');
+  const pinErr = document.getElementById('pinErr');
+  const pinOk = document.getElementById('pinOk');
+  const pinSub = document.getElementById('pinSub');
+  let pending = null;
+
+  // Decrypt a locked link: base64( salt16 | iv12 | AES-GCM ciphertext ), key = PBKDF2(PIN)
+  async function unlock(blob, pin) {
+    const raw = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
+    const salt = raw.slice(0, 16), iv = raw.slice(16, 28), ct = raw.slice(28);
+    const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: salt, iterations: 200000, hash: 'SHA-256' },
+      km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+    return new TextDecoder().decode(pt);
+  }
+
+  function askPin(app) {
+    pending = app;
+    pinSub.textContent = 'Enter the PIN to open ' + app.name + '.';
+    pinIn.value = ''; pinErr.textContent = ''; pinOk.disabled = false;
+    wrap.classList.add('show');
+    setTimeout(() => pinIn.focus(), 50);
+  }
+  function closePin() { wrap.classList.remove('show'); pending = null; }
+
+  async function submitPin() {
+    if (!pending) return;
+    const pin = pinIn.value.trim();
+    if (!pin) return;
+    pinOk.disabled = true; pinErr.textContent = 'Checking…';
+    try {
+      const url = await unlock(pending.enc, pin);
+      try { sessionStorage.setItem('udpin', pin); } catch (e) {}   // remembered until the app/tab is closed
+      window.location.href = url;
+    } catch (e) {
+      pinErr.textContent = 'Wrong PIN. Try again.';
+      pinIn.value = ''; pinOk.disabled = false; pinIn.focus();
+    }
+  }
+
+  APPS.forEach(a => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tile';
+    b.setAttribute('aria-label', a.name);
+
+    const ic = document.createElement('span');
+    ic.className = 'icon';
+    ic.textContent = a.icon;
+    const lb = document.createElement('span');
+    lb.textContent = a.name;
+    b.appendChild(ic);
+    b.appendChild(lb);
+
+    if (a.enc) {
+      const bd = document.createElement('span');
+      bd.className = 'badge';
+      bd.textContent = '🔒';
+      b.appendChild(bd);
+    }
+
+    b.addEventListener('click', async () => {
+      if (!a.enc) { window.location.href = a.url; return; }
+      let saved = null;
+      try { saved = sessionStorage.getItem('udpin'); } catch (e) {}
+      if (saved) {                                   // PIN already entered in this session
+        try { window.location.href = await unlock(a.enc, saved); return; } catch (e) {}
+      }
+      askPin(a);
+    });
+    grid.appendChild(b);
+  });
+
+  document.getElementById('pinOk').addEventListener('click', submitPin);
+  document.getElementById('pinCancel').addEventListener('click', closePin);
+  pinIn.addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); if (e.key === 'Escape') closePin(); });
+  wrap.addEventListener('click', e => { if (e.target === wrap) closePin(); });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
